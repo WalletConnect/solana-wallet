@@ -1,54 +1,33 @@
-import Wallet, { formatDirectSignDoc } from '../src';
+import { Keypair, SystemProgram, Transaction } from '@solana/web3.js';
+import Wallet, { formatDirectSignDoc, serialiseTransaction } from '../src';
+import Base58 from 'bs58';
 
 import {
-  TEST_COSMOS_ADDRESS,
-  TEST_COSMOS_AMINO_SIGNATURE,
-  TEST_COSMOS_CHAIN_REFERENCE,
-  TEST_COSMOS_DIRECT_SIGNATURE,
-  TEST_COSMOS_INPUTS,
-  TEST_COSMOS_KEYPAIR,
+  TEST_SOLANA_KEYPAIR_1,
+  TEST_SOLANA_TRANSACTION,
+  TEST_SOLANA_SIGN_TRANSACTION,
+  TEST_SOLANA_SIGNATURE,
 } from './shared/';
 
 describe('Wallet', () => {
   let wallet: Wallet;
   beforeAll(async () => {
-    wallet = await Wallet.init(TEST_COSMOS_KEYPAIR.privateKey);
+    wallet = new Wallet(TEST_SOLANA_KEYPAIR_1.privateKey);
   });
   it('getAccounts', async () => {
     const result = await wallet.getAccounts();
     expect(result).toBeTruthy();
-    expect(result[0].address).toEqual(TEST_COSMOS_ADDRESS);
-    expect(result[0].algo).toEqual('secp256k1');
+    expect(result[0].pubkey).toEqual(TEST_SOLANA_KEYPAIR_1.publicKey);
   });
-  it('signDirect', async () => {
-    const chainId = TEST_COSMOS_CHAIN_REFERENCE;
-    const signerAddress = TEST_COSMOS_ADDRESS;
-    const {
-      fee,
-      pubkey,
-      gasLimit,
-      accountNumber,
-      sequence,
-      bodyBytes,
-    } = TEST_COSMOS_INPUTS.direct;
-    const signDoc = formatDirectSignDoc(
-      fee,
-      pubkey,
-      gasLimit,
-      accountNumber,
-      sequence,
-      bodyBytes,
-      chainId
+  it('signTransaction', async () => {
+    const [account] = await wallet.getAccounts();
+
+    const result = await wallet.signTransaction(
+      account.pubkey,
+      serialiseTransaction(TEST_SOLANA_TRANSACTION)
     );
-    const result = await wallet.signDirect(signerAddress, signDoc);
+
     expect(result).toBeTruthy();
-    expect(result.signature.signature).toEqual(TEST_COSMOS_DIRECT_SIGNATURE);
-  });
-  it('signAmino', async () => {
-    const signerAddress = TEST_COSMOS_ADDRESS;
-    const signDoc = TEST_COSMOS_INPUTS.amino;
-    const result = await wallet.signAmino(signerAddress, signDoc);
-    expect(result).toBeTruthy();
-    expect(result.signature.signature).toEqual(TEST_COSMOS_AMINO_SIGNATURE);
+    expect(result.signature).toEqual(TEST_SOLANA_SIGNATURE);
   });
 });

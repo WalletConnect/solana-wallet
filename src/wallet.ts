@@ -11,57 +11,56 @@ import {
   DirectSecp256k1Wallet,
   DirectSignResponse,
 } from '@cosmjs/proto-signing';
-import { SignDoc } from '@cosmjs/proto-signing/build/codec/cosmos/tx/v1beta1/tx';
-
+import {
+  PublicKey,
+  Keypair,
+  Transaction,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import {
   getAddressFromPublicKey,
   getPublicKey,
-  ICosmosWallet,
+  ISolanaWallet,
+  SolanaSignTransaction,
+  deserialiseTransaction,
 } from './helpers';
+import bs58 from 'bs58';
 
-export class CosmosWallet implements ICosmosWallet {
-  public static async init(
-    privateKey: string,
-    prefix = 'cosmos'
-  ): Promise<CosmosWallet> {
-    const privkey = fromHex(privateKey);
-    const pubkey = await getPublicKey(privkey);
-    const address = getAddressFromPublicKey(pubkey, prefix);
-    const direct = await DirectSecp256k1Wallet.fromKey(privkey, prefix);
-    return new CosmosWallet(direct, privkey, pubkey, address);
+export class SolanaWallet implements ISolanaWallet {
+  private keyPair: Keypair;
+
+  constructor(privateKey: string) {
+    this.keyPair = Keypair.fromSecretKey(Buffer.from(privateKey), {
+      skipValidation: true,
+    });
   }
 
-  constructor(
-    public direct: DirectSecp256k1Wallet,
-    private privkey: Uint8Array,
-    private pubkey: Uint8Array,
-    private address: string
-  ) {}
-
-  public async getAccounts(): Promise<readonly AccountData[]> {
-    return this.direct.getAccounts();
+  public async getAccounts(): Promise<{ pubkey: string }[]> {
+    return [{ pubkey: await this.keyPair.publicKey.toBase58() }];
   }
 
-  public async signDirect(
+  public async signTransaction(
     address: string,
-    signDoc: SignDoc
-  ): Promise<DirectSignResponse> {
-    return this.direct.signDirect(address, signDoc);
-  }
-
-  public async signAmino(
-    address: string,
-    signDoc: StdSignDoc
-  ): Promise<AminoSignResponse> {
-    if (address !== this.address) {
+    serialisedTransaction: SolanaSignTransaction
+  ): Promise<{ signature: string }> {
+    const accounts = await this.getAccounts();
+    if (!accounts.find(x => x.pubkey === address)) {
       throw new Error(`Address ${address} not found in wallet`);
     }
-    const message = new Sha256(serializeSignDoc(signDoc)).digest();
-    const sig = await Secp256k1.createSignature(message, this.privkey);
-    const sigBytes = new Uint8Array([...sig.r(32), ...sig.s(32)]);
-    const signature = encodeSecp256k1Signature(this.pubkey, sigBytes);
-    return { signed: signDoc, signature };
+
+    const transaction = deserialiseTransaction(serialisedTransaction);
+    await transaction.sign(this.keyPair);
+
+    const result = transaction.signatures[transaction.signatures.length - 1];
+
+    if (!result?.signature) {
+      throw new Error('Missing signature');
+    }
+
+    return {
+      signature: bs58.encode(result.signature),
+    };
   }
 }
 
-export default CosmosWallet;
+export default SolanaWallet;
