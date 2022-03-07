@@ -1,12 +1,8 @@
-import { Keypair, SystemProgram, Transaction } from '@solana/web3.js';
-import Wallet, { formatDirectSignDoc, serialiseTransaction } from '../src';
-import Base58 from 'bs58';
-
+import Wallet, { serialiseTransaction } from '../src';
 import {
   TEST_SOLANA_KEYPAIR_1,
-  TEST_SOLANA_TRANSACTION,
-  TEST_SOLANA_SIGN_TRANSACTION,
   TEST_SOLANA_SIGNATURE,
+  TEST_SOLANA_TRANSACTION,
 } from './shared/';
 
 describe('Wallet', () => {
