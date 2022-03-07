@@ -1,36 +1,17 @@
-import { Secp256k1, Sha256 } from '@cosmjs/crypto';
-import { fromHex } from '@cosmjs/encoding';
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
 import {
-  encodeSecp256k1Signature,
-  serializeSignDoc,
-  StdSignDoc,
-  AminoSignResponse,
-  AccountData,
-} from '@cosmjs/amino';
-import {
-  DirectSecp256k1Wallet,
-  DirectSignResponse,
-} from '@cosmjs/proto-signing';
-import {
-  PublicKey,
-  Keypair,
-  Transaction,
-  TransactionInstruction,
-} from '@solana/web3.js';
-import {
-  getAddressFromPublicKey,
-  getPublicKey,
+  deserialiseTransaction,
   ISolanaWallet,
   SolanaSignTransaction,
-  deserialiseTransaction,
 } from './helpers';
-import bs58 from 'bs58';
+import nacl from 'tweetnacl';
 
 export class SolanaWallet implements ISolanaWallet {
   private keyPair: Keypair;
 
-  constructor(privateKey: string) {
-    this.keyPair = Keypair.fromSecretKey(Buffer.from(privateKey), {
+  constructor(privateKey: Buffer) {
+    this.keyPair = Keypair.fromSecretKey(privateKey, {
       skipValidation: true,
     });
   }
@@ -59,6 +40,24 @@ export class SolanaWallet implements ISolanaWallet {
 
     return {
       signature: bs58.encode(result.signature),
+    };
+  }
+
+  public async signMessage(
+    address: string,
+    message: string
+  ): Promise<{ signature: string }> {
+    const accounts = await this.getAccounts();
+    if (!accounts.find(x => x.pubkey === address)) {
+      throw new Error(`Address ${address} not found in wallet`);
+    }
+
+    const signature = nacl.sign.detached(
+      bs58.decode(message),
+      this.keyPair.secretKey
+    );
+    return {
+      signature: bs58.encode(signature),
     };
   }
 }

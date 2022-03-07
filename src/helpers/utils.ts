@@ -1,7 +1,7 @@
-import { COSMOS_ADDRESS_PREFIX } from '../constants';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { SolanaSignTransaction } from './types';
+import nacl from 'tweetnacl';
 
 export function deserialiseTransaction(
   seralised: SolanaSignTransaction
@@ -42,11 +42,35 @@ export function serialiseTransaction(tx: Transaction): SolanaSignTransaction {
         ...key,
         pubkey: key.pubkey.toBase58(),
       })),
-      data: bs58.encode(Buffer.from([])), //  tx.daa,
+      data: bs58.encode(instruction.data),
     })),
     partialSignatures: tx.signatures.map(sign => ({
       pubkey: sign.publicKey.toBase58(),
       signature: bs58.encode(sign.signature!),
     })),
   };
+}
+
+export function verifyTransactionSignature(
+  address: string,
+  signature: string,
+  tx: Transaction
+) {
+  return nacl.sign.detached.verify(
+    tx.serializeMessage(),
+    bs58.decode(signature),
+    bs58.decode(address)
+  );
+}
+
+export function verifyMessageSignature(
+  address: string,
+  signature: string,
+  message: string
+) {
+  return nacl.sign.detached.verify(
+    bs58.decode(message),
+    bs58.decode(signature),
+    bs58.decode(address)
+  );
 }

@@ -1,5 +1,13 @@
 export abstract class ISolanaWallet {
   public abstract getAccounts(): Promise<{ pubkey: string }[]>;
+  public abstract signTransaction(
+    address: string,
+    serialisedTransaction: SolanaSignTransaction
+  ): Promise<{ signature: string }>;
+  public abstract signMessage(
+    pubkey: string,
+    message: string
+  ): Promise<{ signature: string }>;
 }
 
 export interface SolanaSignTransaction {
