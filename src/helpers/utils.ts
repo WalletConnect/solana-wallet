@@ -22,12 +22,14 @@ export function deserialiseTransaction(
     }))
   );
 
-  seralised.partialSignatures.forEach(partial => {
-    tx.addSignature(
-      new PublicKey(bs58.decode(partial.pubkey)),
-      Buffer.from(bs58.decode(partial.pubkey))
-    );
-  });
+  if(seralised.partialSignatures) {
+    seralised.partialSignatures.forEach(partial => {
+      tx.addSignature(
+        new PublicKey(bs58.decode(partial.pubkey)),
+        Buffer.from(bs58.decode(partial.pubkey))
+      );
+    });
+  }
 
   return tx;
 }
