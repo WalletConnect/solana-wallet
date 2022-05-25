@@ -2,7 +2,11 @@ import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import {
   deserialiseTransaction,
+  deserializeAllTransactions,
   ISolanaWallet,
+  serialiseTransaction,
+  serializeAllTransactions,
+  SolanaSignAllTransactions,
   SolanaSignTransaction,
 } from './helpers';
 import nacl from 'tweetnacl';
@@ -17,40 +21,38 @@ export class SolanaWallet implements ISolanaWallet {
   }
 
   public async getAccounts(): Promise<{ pubkey: string }[]> {
-    return [{ pubkey: await this.keyPair.publicKey.toBase58() }];
+    return [{ pubkey: this.keyPair.publicKey.toBase58() }];
+  }
+
+  public async signAllTransactions(
+    address: string,
+    serialisedTransactions: SolanaSignAllTransactions
+  ): Promise<SolanaSignAllTransactions> {
+    await this.verifyAddressInWallet(address);
+
+    const transactions = deserializeAllTransactions(serialisedTransactions);
+    transactions.forEach(tx => tx.sign(this.keyPair));
+
+    return serializeAllTransactions(transactions);
   }
 
   public async signTransaction(
     address: string,
     serialisedTransaction: SolanaSignTransaction
-  ): Promise<{ signature: string }> {
-    const accounts = await this.getAccounts();
-    if (!accounts.find(x => x.pubkey === address)) {
-      throw new Error(`Address ${address} not found in wallet`);
-    }
+  ): Promise<SolanaSignTransaction> {
+    await this.verifyAddressInWallet(address);
 
     const transaction = deserialiseTransaction(serialisedTransaction);
-    await transaction.sign(this.keyPair);
+    transaction.sign(this.keyPair);
 
-    const result = transaction.signatures[transaction.signatures.length - 1];
-
-    if (!result?.signature) {
-      throw new Error('Missing signature');
-    }
-
-    return {
-      signature: bs58.encode(result.signature),
-    };
+    return serialiseTransaction(transaction);
   }
 
   public async signMessage(
     address: string,
     message: string
   ): Promise<{ signature: string }> {
-    const accounts = await this.getAccounts();
-    if (!accounts.find(x => x.pubkey === address)) {
-      throw new Error(`Address ${address} not found in wallet`);
-    }
+    await this.verifyAddressInWallet(address);
 
     const signature = nacl.sign.detached(
       bs58.decode(message),
@@ -59,6 +61,13 @@ export class SolanaWallet implements ISolanaWallet {
     return {
       signature: bs58.encode(signature),
     };
+  }
+
+  async verifyAddressInWallet(address: string) {
+    const accounts = await this.getAccounts();
+    if (!accounts.find(x => x.pubkey === address)) {
+      throw new Error(`Address ${address} not found in wallet`);
+    }
   }
 }
 

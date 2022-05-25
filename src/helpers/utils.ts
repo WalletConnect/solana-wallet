@@ -1,29 +1,43 @@
-import { PublicKey, Transaction } from '@solana/web3.js';
+import {
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import bs58 from 'bs58';
-import { SolanaSignTransaction } from './types';
+import {
+  SolanaSignAllTransactions,
+  SolanaSignInstruction,
+  SolanaSignTransaction,
+} from './types';
 import nacl from 'tweetnacl';
 
+export function deserializeAllTransactions(
+  serialized: SolanaSignAllTransactions
+): Transaction[] {
+  return serialized.transactions.map(deserialiseTransaction);
+}
+
 export function deserialiseTransaction(
-  seralised: SolanaSignTransaction
+  serialised: SolanaSignTransaction
 ): Transaction {
   const tx = new Transaction({
-    recentBlockhash: seralised.recentBlockhash,
-    feePayer: new PublicKey(bs58.decode(seralised.feePayer)),
+    feePayer: new PublicKey(bs58.decode(serialised.feePayer)),
+    recentBlockhash: serialised.recentBlockhash,
   });
 
-  tx.add(
-    ...seralised.instructions.map(x => ({
-      programId: new PublicKey(bs58.decode(x.programId)),
-      data: x.data ? Buffer.from(bs58.decode(x.data)) : Buffer.from([]),
-      keys: x.keys.map(y => ({
-        ...y,
-        pubkey: new PublicKey(bs58.decode(y.pubkey)),
-      })),
-    }))
-  );
+  tx.add(...serialised.instructions.map(deserializeInstruction));
 
-  if(seralised.partialSignatures) {
-    seralised.partialSignatures.forEach(partial => {
+  if (serialised.nonceInfo) {
+    tx.nonceInfo = {
+      nonce: serialised.nonceInfo.nonce,
+      nonceInstruction: deserializeInstruction(
+        serialised.nonceInfo.nonceInstruction
+      ),
+    };
+  }
+
+  if (serialised.signatures) {
+    serialised.signatures.forEach(partial => {
       tx.addSignature(
         new PublicKey(bs58.decode(partial.pubkey)),
         Buffer.from(bs58.decode(partial.pubkey))
@@ -34,21 +48,55 @@ export function deserialiseTransaction(
   return tx;
 }
 
+function deserializeInstruction(
+  instruction: SolanaSignInstruction
+): TransactionInstruction {
+  return {
+    programId: new PublicKey(bs58.decode(instruction.programId)),
+    data: Buffer.from(bs58.decode(instruction.data ?? '')),
+    keys: instruction.keys.map(key => ({
+      isSigner: key.isSigner,
+      isWritable: key.isWritable,
+      pubkey: new PublicKey(bs58.decode(key.pubkey)),
+    })),
+  };
+}
+
+export function serializeAllTransactions(
+  tx: Transaction[]
+): SolanaSignAllTransactions {
+  return {
+    transactions: tx.map(serialiseTransaction),
+  };
+}
+
 export function serialiseTransaction(tx: Transaction): SolanaSignTransaction {
   return {
     feePayer: tx.feePayer!.toBase58(),
     recentBlockhash: tx.recentBlockhash!,
-    instructions: tx.instructions.map(instruction => ({
-      programId: instruction.programId.toBase58(),
-      keys: instruction.keys.map(key => ({
-        ...key,
-        pubkey: key.pubkey.toBase58(),
-      })),
-      data: bs58.encode(instruction.data),
-    })),
-    partialSignatures: tx.signatures.map(sign => ({
+    instructions: tx.instructions.map(serializeInstruction),
+    nonceInfo: tx.nonceInfo
+      ? {
+          nonce: tx.nonceInfo.nonce,
+          nonceInstruction: serializeInstruction(tx.nonceInfo.nonceInstruction),
+        }
+      : undefined,
+    signatures: tx.signatures.map(sign => ({
       pubkey: sign.publicKey.toBase58(),
       signature: bs58.encode(sign.signature!),
+    })),
+  };
+}
+
+function serializeInstruction(
+  instruction: TransactionInstruction
+): SolanaSignInstruction {
+  return {
+    programId: instruction.programId.toBase58(),
+    keys: instruction.keys.map(key => ({
+      isSigner: key.isSigner,
+      isWritable: key.isWritable,
+      pubkey: key.pubkey.toBase58(),
     })),
   };
 }
