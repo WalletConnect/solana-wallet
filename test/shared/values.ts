@@ -19,16 +19,18 @@ export const TEST_TRANSACTION_SIGNATURE =
 export const TEST_RECENT_BLOCK_HASH =
   'F1bSUud8754dv3D4wB8LQb2m2snxiuPnLdNFCWfDPZDJ';
 
-export const TEST_TRANSACTION = new Transaction({
-  recentBlockhash: TEST_RECENT_BLOCK_HASH,
-  feePayer: new PublicKey(TEST_SOLANA_KEYPAIR_1.publicKey),
-}).add(
-  SystemProgram.transfer({
-    fromPubkey: new PublicKey(TEST_SOLANA_KEYPAIR_1.publicKey),
-    toPubkey: new PublicKey(TEST_SOLANA_KEYPAIR_2.publicKey),
-    lamports: 123,
-  })
-);
+// This needs to be a factory method because Transaction.compile() mutates the signature array
+export const TEST_TRANSACTION = () =>
+  new Transaction({
+    recentBlockhash: TEST_RECENT_BLOCK_HASH,
+    feePayer: new PublicKey(TEST_SOLANA_KEYPAIR_1.publicKey),
+  }).add(
+    SystemProgram.transfer({
+      fromPubkey: new PublicKey(TEST_SOLANA_KEYPAIR_1.publicKey),
+      toPubkey: new PublicKey(TEST_SOLANA_KEYPAIR_2.publicKey),
+      lamports: 123,
+    })
+  );
 
 export const TEST_MESSAGE = base58.encode(Buffer.from('hello world'));
 export const TEST_MESSAGE_SIGNATURE =

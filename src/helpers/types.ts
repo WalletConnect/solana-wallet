@@ -14,6 +14,10 @@ export abstract class ISolanaWallet {
   ): Promise<{ signature: string }>;
 }
 
+export interface SolanaSignAllTransactions {
+  transactions: SolanaSignTransaction[];
+}
+
 export interface SolanaSignTransaction {
   /** public key of the transaction fee payer */
   feePayer: string;
@@ -29,7 +33,7 @@ export interface SolanaSignTransaction {
   /** a recent blockhash */
   recentBlockhash: string;
   /** Signatures for this instruction set */
-  signatures?: {
+  signatures: {
     /** pubkey of the signer */
     pubkey: string;
     /** signature matching `pubkey` */
@@ -37,15 +41,11 @@ export interface SolanaSignTransaction {
   }[];
 }
 
-export interface SolanaSignAllTransactions {
-  transactions: SolanaSignTransaction[];
-}
-
 export interface SolanaSignInstruction {
   /** public key of the on chain program */
   programId: string;
   /** base58 encoded calldata for instruction */
-  data?: string;
+  data: string;
   /** account metadata used to define instructions */
   keys: {
     /** true if an instruction requires a transaction signature matching `pubkey` */

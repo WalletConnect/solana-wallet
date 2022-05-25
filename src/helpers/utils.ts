@@ -36,14 +36,12 @@ export function deserialiseTransaction(
     };
   }
 
-  if (serialised.signatures) {
-    serialised.signatures.forEach(partial => {
-      tx.addSignature(
-        new PublicKey(bs58.decode(partial.pubkey)),
-        Buffer.from(bs58.decode(partial.pubkey))
-      );
-    });
-  }
+  serialised.signatures.forEach(partial => {
+    tx.addSignature(
+      new PublicKey(bs58.decode(partial.pubkey)),
+      Buffer.from(bs58.decode(partial.signature))
+    );
+  });
 
   return tx;
 }
@@ -83,7 +81,7 @@ export function serialiseTransaction(tx: Transaction): SolanaSignTransaction {
       : undefined,
     signatures: tx.signatures.map(sign => ({
       pubkey: sign.publicKey.toBase58(),
-      signature: bs58.encode(sign.signature!),
+      signature: bs58.encode(new Uint8Array(sign.signature!)),
     })),
   };
 }
@@ -93,6 +91,7 @@ function serializeInstruction(
 ): SolanaSignInstruction {
   return {
     programId: instruction.programId.toBase58(),
+    data: bs58.encode(new Uint8Array(instruction.data)),
     keys: instruction.keys.map(key => ({
       isSigner: key.isSigner,
       isWritable: key.isWritable,
