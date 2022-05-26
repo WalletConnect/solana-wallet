@@ -37,7 +37,7 @@ export interface SolanaSignTransaction {
     /** pubkey of the signer */
     pubkey: string;
     /** signature matching `pubkey` */
-    signature: string;
+    signature?: string;
   }[];
 }
 

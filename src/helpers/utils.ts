@@ -1,5 +1,6 @@
 import {
   PublicKey,
+  SignaturePubkeyPair,
   Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
@@ -36,11 +37,13 @@ export function deserialiseTransaction(
     };
   }
 
-  serialised.signatures.forEach(partial => {
-    tx.addSignature(
-      new PublicKey(bs58.decode(partial.pubkey)),
-      Buffer.from(bs58.decode(partial.signature))
-    );
+  tx.signatures = serialised.signatures.map<SignaturePubkeyPair>(signature => {
+    return {
+      publicKey: new PublicKey(bs58.decode(signature.pubkey)),
+      signature: signature.signature
+        ? Buffer.from(bs58.decode(signature.signature))
+        : null,
+    };
   });
 
   return tx;
@@ -81,7 +84,9 @@ export function serialiseTransaction(tx: Transaction): SolanaSignTransaction {
       : undefined,
     signatures: tx.signatures.map(sign => ({
       pubkey: sign.publicKey.toBase58(),
-      signature: bs58.encode(new Uint8Array(sign.signature!)),
+      signature: sign.signature
+        ? bs58.encode(new Uint8Array(sign.signature))
+        : undefined,
     })),
   };
 }
