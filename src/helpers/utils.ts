@@ -22,7 +22,7 @@ export function deserialiseTransaction(
   serialised: SolanaSignTransaction
 ): Transaction {
   const tx = new Transaction({
-    feePayer: new PublicKey(bs58.decode(serialised.feePayer)),
+    feePayer: new PublicKey(serialised.feePayer),
     recentBlockhash: serialised.recentBlockhash,
   });
 
@@ -39,7 +39,7 @@ export function deserialiseTransaction(
 
   tx.signatures = serialised.signatures.map<SignaturePubkeyPair>(signature => {
     return {
-      publicKey: new PublicKey(bs58.decode(signature.pubkey)),
+      publicKey: new PublicKey(signature.pubkey),
       signature: signature.signature
         ? Buffer.from(bs58.decode(signature.signature))
         : null,
@@ -53,12 +53,12 @@ function deserializeInstruction(
   instruction: SolanaSignInstruction
 ): TransactionInstruction {
   return {
-    programId: new PublicKey(bs58.decode(instruction.programId)),
+    programId: new PublicKey(instruction.programId),
     data: Buffer.from(bs58.decode(instruction.data ?? '')),
     keys: instruction.keys.map(key => ({
       isSigner: key.isSigner,
       isWritable: key.isWritable,
-      pubkey: new PublicKey(bs58.decode(key.pubkey)),
+      pubkey: new PublicKey(key.pubkey),
     })),
   };
 }
