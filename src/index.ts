@@ -1,6 +1,6 @@
-import W from './wallet';
+import SolanaWallet from './wallet';
 
 export * from './helpers';
 export * from './wallet';
 
-export default W;
+export default SolanaWallet;
