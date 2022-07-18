@@ -12,14 +12,27 @@ export function deserialiseTransaction(
   });
 
   tx.add(
-    ...seralised.instructions.map(x => ({
-      programId: new PublicKey(bs58.decode(x.programId)),
-      data: x.data ? Buffer.from(bs58.decode(x.data)) : Buffer.from([]),
-      keys: x.keys.map(y => ({
-        ...y,
-        pubkey: new PublicKey(bs58.decode(y.pubkey)),
-      })),
-    }))
+    ...seralised.instructions.map(x => {
+      let data: Buffer;
+      if (x.data) {
+        if ('string' === typeof x.data) {
+          data = Buffer.from(bs58.decode(x.data));
+        } else {
+          data = Buffer.from(x.data);
+        }
+      } else {
+        data = Buffer.from([]);
+      }
+
+      return {
+        programId: new PublicKey(bs58.decode(x.programId)),
+        data,
+        keys: x.keys.map(y => ({
+          ...y,
+          pubkey: new PublicKey(bs58.decode(y.pubkey)),
+        })),
+      };
+    })
   );
 
   seralised.partialSignatures.forEach(partial => {
