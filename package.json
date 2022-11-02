@@ -31,6 +31,7 @@
     "build:umd": "webpack",
     "build": "yarn clean && yarn build:cjs && yarn build:umd",
     "test": "tsdx test ./test",
+    "test:watch": "tsdx test --watch ./test",
     "lint": "tsdx lint src test",
     "prepare": "yarn lint && yarn build && yarn test"
   },
