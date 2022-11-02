@@ -8,7 +8,9 @@ export function deserialiseTransaction(
 ): Transaction {
   const resolveInstructionData = (data?: string | Buffer) => {
     if (!data) return Buffer.from([]);
-    return typeof data === 'string' ? Buffer.from(bs58.decode(data)) : data;
+    return typeof data === 'string'
+      ? Buffer.from(bs58.decode(data))
+      : Buffer.from(data);
   };
 
   const tx = new Transaction({
