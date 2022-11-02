@@ -75,7 +75,7 @@ describe('Wallet', () => {
 
       expect(result).toBeTruthy();
       expect(
-        await verifyTransactionSignature(
+        verifyTransactionSignature(
           account.pubkey,
           result.signature,
           TEST_TRANSACTION
