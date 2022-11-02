@@ -14,7 +14,7 @@ export interface SolanaSignTransaction {
   feePayer: string;
   instructions: {
     programId: string;
-    data?: string;
+    data?: string | Buffer;
     keys: { isSigner: boolean; isWritable: boolean; pubkey: string }[];
   }[];
   recentBlockhash: string;

@@ -59,11 +59,10 @@ describe('Wallet', () => {
       const [account] = await wallet.getAccounts();
 
       const serialisedTx = serialiseTransaction(TEST_TRANSACTION);
-      // @ts-expect-error
       serialisedTx.instructions = serialisedTx.instructions.map(instr => {
         return {
           ...instr,
-          data: Buffer.from(base58.decode(instr.data!)),
+          data: Buffer.from(base58.decode(instr.data as string)),
         };
       });
 

@@ -6,6 +6,11 @@ import nacl from 'tweetnacl';
 export function deserialiseTransaction(
   seralised: SolanaSignTransaction
 ): Transaction {
+  const resolveInstructionData = (data?: string | Buffer) => {
+    if (!data) return Buffer.from([]);
+    return typeof data === 'string' ? Buffer.from(bs58.decode(data)) : data;
+  };
+
   const tx = new Transaction({
     recentBlockhash: seralised.recentBlockhash,
     feePayer: new PublicKey(bs58.decode(seralised.feePayer)),
@@ -14,7 +19,7 @@ export function deserialiseTransaction(
   tx.add(
     ...seralised.instructions.map(x => ({
       programId: new PublicKey(bs58.decode(x.programId)),
-      data: x.data ? Buffer.from(bs58.decode(x.data)) : Buffer.from([]),
+      data: resolveInstructionData(x.data),
       keys: x.keys.map(y => ({
         ...y,
         pubkey: new PublicKey(bs58.decode(y.pubkey)),
