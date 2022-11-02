@@ -30,16 +30,19 @@ export class SolanaWallet implements ISolanaWallet {
     }
 
     const transaction = deserialiseTransaction(serialisedTransaction);
-    await transaction.sign(this.keyPair);
 
-    const result = transaction.signatures[transaction.signatures.length - 1];
+    transaction.sign(this.keyPair);
 
-    if (!result?.signature) {
+    // From `Transaction.sign` documentation:
+    // The first signature is considered "primary" and is used identify and confirm transactions.
+    const primarySigPubkeyPair = transaction.signatures[0];
+
+    if (!primarySigPubkeyPair?.signature) {
       throw new Error('Missing signature');
     }
 
     return {
-      signature: bs58.encode(result.signature),
+      signature: bs58.encode(primarySigPubkeyPair.signature),
     };
   }
 
