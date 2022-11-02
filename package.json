@@ -34,6 +34,11 @@
     "lint": "tsdx lint src test",
     "prepare": "yarn lint && yarn build && yarn test"
   },
+  "dependencies": {
+    "@solana/web3.js": "^1.35.1",
+    "bs58": "^5.0.0",
+    "tweetnacl": "^1.0.3"
+  },
   "devDependencies": {
     "@types/jest": "^27.4.1",
     "@types/node": "13.7.0",
@@ -54,10 +59,5 @@
     "semi": true,
     "singleQuote": true,
     "trailingComma": "es5"
-  },
-  "dependencies": {
-    "@solana/web3.js": "^1.35.1",
-    "bs58": "^5.0.0",
-    "tweetnacl": "^1.0.3"
   }
 }
